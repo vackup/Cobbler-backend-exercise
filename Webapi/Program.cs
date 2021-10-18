@@ -20,7 +20,7 @@ namespace Webapi
             using (var scope = host.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
-                var context = services.GetRequiredService<BookLibraryDbContext>();
+                var context = services.GetRequiredService<BudgetAllocatorDbContext>();
 
                 await DataGenerator.Initialize(services);
             }

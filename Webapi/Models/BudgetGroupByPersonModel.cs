@@ -1,6 +1,6 @@
 ﻿namespace Webapi.Models
 {
-    public class BookResponseModel
+    public class BudgetGroupByPersonModel
     {
         public int Id { get; set; }
 

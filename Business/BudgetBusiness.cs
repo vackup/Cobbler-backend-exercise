@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Business.Contracts;
 using DataAccess.Contracts;
@@ -10,53 +11,131 @@ namespace Business
 {
     public class BudgetBusiness : IBudgetBusiness
     {
-        private readonly IBudgetRepository repository;
+        private readonly IUnitOfWork unitOfWork;
 
-        public BudgetBusiness(IBudgetRepository repository)
+        public BudgetBusiness(IUnitOfWork unitOfWork)
         {
-            this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            this.unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         public async Task<IEnumerable<Budget>> GetAllAsync()
         {
-            return await this.repository.GetAllAsync();
+            return await this.unitOfWork.BudgetRepository.GetAllAsync();
         }
 
         public async Task<Budget> GetAsync(int id)
         {
-            return await this.repository.GetAsync(id);
+            return await this.unitOfWork.BudgetRepository.GetAsync(id);
         }
 
         public async Task<Budget> GetFirstOrDefaultAsync()
         {
-            return await this.repository.GetFirstOrDefaultAsync();
+            return await this.unitOfWork.BudgetRepository.GetFirstOrDefaultAsync();
         }
 
         public async Task CreateAsync(Budget budget)
         {
-            var userBudget = await this.repository.GetByUserIdAsync(budget.User);
-
-            if (userBudget != null)
+            using (var transaction = this.unitOfWork.BeginTransaction())
             {
-                throw new Exception($"Budget was already created for user {budget.User}");
-            }
+                try
+                {
+                    var userBudget = await this.unitOfWork.BudgetRepository.GetByUserIdAsync(budget.User);
 
-            await this.repository.InsertAsync(budget);
+                    if (userBudget != null)
+                    {
+                        throw new Exception($"Budget was already created for user {budget.User}");
+                    }
+
+                    await this.unitOfWork.BudgetRepository.InsertAsync(budget);
+
+                    await this.unitOfWork.CompleteAsync();
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
         }
 
         public async Task UpdateAsync(Budget entity)
         {
-            await this.repository.UpdateAsync(entity);
+            await this.unitOfWork.BudgetRepository.UpdateAsync(entity);
         }
 
         public async Task DeleteAsync(int id)
         {
-            await this.repository.DeleteAsync(id);
+            await this.unitOfWork.BudgetRepository.DeleteAsync(id);
         }
 
         public async Task DeleteAsync(Budget entity)
         {
-            await this.repository.DeleteAsync(entity);
+            await this.unitOfWork.BudgetRepository.DeleteAsync(entity);
+        }
+
+        public async Task<decimal> GetAvailableMoneyToAllocateByUserIdAsync(int user)
+        {
+            var budget = await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(user);
+
+            return GetAvailableMoneyToAllocateByBudget(budget);
+        }
+
+        private static decimal GetAvailableMoneyToAllocateByBudget(Budget budget)
+        {
+            if (budget == null)
+            {
+                return 0m;
+            }
+
+            var moneyAllocationsSum = GetMoneyAllocated(budget);
+
+            return budget.InitialMoneyToAllocate - moneyAllocationsSum;
+        }
+
+        private static decimal GetMoneyAllocated(Budget budget)
+        {
+            var moneyAllocationsSum = 0m;
+
+            if (budget.MoneyAllocations != null && budget.MoneyAllocations.Any())
+            {
+                moneyAllocationsSum = budget.MoneyAllocations.Sum(m => m.MoneyAllocated);
+            }
+
+            return moneyAllocationsSum;
+        }
+
+        public async Task CreateNewMoneyAllocationAsync(MoneyAllocation moneyAllocation)
+        {
+            if (moneyAllocation.ProjectId == null && moneyAllocation.PersonId == null)
+            {
+                throw new ArgumentException("Money allocations needs project and / or person");
+            }
+
+
+            var budget = await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(moneyAllocation.UserId);
+
+            var availableMoneyToAllocate = GetAvailableMoneyToAllocateByBudget(budget);
+
+            if (availableMoneyToAllocate <= 0m)
+            {
+                throw new Exception("There is no more money available to allocate");
+            }
+
+            if (moneyAllocation.MoneyAllocated > availableMoneyToAllocate)
+            {
+                throw new Exception("There is no more money available to allocate");
+            }
+
+            moneyAllocation.BudgetId = budget.Id;
+
+            await this.unitOfWork.MoneyAllocationRepository.InsertAsync(moneyAllocation);
+        }
+
+        public async Task<Budget> GetIncludeMoneyAllocationsByUserIdAsync(int user)
+        {
+            return await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(user);
         }
     }
 }

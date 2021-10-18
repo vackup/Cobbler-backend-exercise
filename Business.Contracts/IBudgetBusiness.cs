@@ -22,5 +22,8 @@ namespace Business.Contracts
         Task DeleteAsync(int id);
 
         Task DeleteAsync(Budget entity);
+        Task<decimal> GetAvailableMoneyToAllocateByUserIdAsync(int user);
+        Task CreateNewMoneyAllocationAsync(MoneyAllocation moneyAllocation);
+        Task<Budget> GetIncludeMoneyAllocationsByUserIdAsync(int user);
     }
 }

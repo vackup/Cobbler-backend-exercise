@@ -10,22 +10,34 @@ namespace DataAccess
     {
         public static async Task Initialize(IServiceProvider serviceProvider)
         {
-            using (var context = new BookLibraryDbContext(
-                serviceProvider.GetRequiredService<DbContextOptions<BookLibraryDbContext>>()))
+            using (var context = new BudgetAllocatorDbContext(
+                serviceProvider.GetRequiredService<DbContextOptions<BudgetAllocatorDbContext>>()))
             {
-                var authorRepository = new BudgetRepository(context);
-                var bookRepository = new BookRepository(context);
+                // Insert Persons
+                var personRepository = new PersonRepository(context);
 
-                var author = new Budget { Id = 1, Name = "Borges" };
+                await InsertPersonAsync(personRepository, 1, "John");
+                await InsertPersonAsync(personRepository, 2, "AJ");
+                await InsertPersonAsync(personRepository, 3, "BJ");
 
-                await authorRepository.InsertAsync(author);
-
-                await bookRepository.InsertAsync(new Book { Id = 1, Author = author, Title = "Book 1"});
-                await bookRepository.InsertAsync(new Book { Id = 2, Author = author, Title = "Book 2" });
-                await bookRepository.InsertAsync(new Book { Id = 3, Author = author, Title = "Book 3" });
-                await bookRepository.InsertAsync(new Book { Id = 4, Author = author, Title = "Book 4" });
-                await bookRepository.InsertAsync(new Book { Id = 5, Author = author, Title = "Book 5" });
+                // Insert Project
+                var projectRepository = new ProjectRepository(context);
+                await InsertProjectAsync(projectRepository, 1, "Project A");
+                await InsertProjectAsync(projectRepository, 2, "Project B");
+                await InsertProjectAsync(projectRepository, 3, "Project C");
             }
+        }
+
+        private static async Task InsertProjectAsync(ProjectRepository projectRepository, int id, string name)
+        {
+            var project = new Project {Id = id, Name = name};
+            await projectRepository.InsertAsync(project);
+        }
+
+        private static async Task InsertPersonAsync(PersonRepository personRepository, int id, string name)
+        {
+            var person = new Person {Id = id, Name = name };
+            await personRepository.InsertAsync(person);
         }
     }
 }

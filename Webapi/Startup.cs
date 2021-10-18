@@ -56,15 +56,13 @@ namespace Webapi
         private static void AddBusiness(IServiceCollection services)
         {
             services.AddScoped(typeof(IBudgetBusiness), typeof(BudgetBusiness));
-            services.AddScoped(typeof(IBookBusiness), typeof(BookBusiness));
         }
 
         private static void AddRepositories(IServiceCollection services)
         {
-            services.AddDbContext<BookLibraryDbContext>(options => options.UseInMemoryDatabase(databaseName: "BookLibrary"));
+            services.AddDbContext<BudgetAllocatorDbContext>(options => options.UseInMemoryDatabase(databaseName: "BookLibrary"));
 
-            services.AddScoped(typeof(IBudgetRepository), typeof(BudgetRepository));
-            services.AddScoped(typeof(IBookRepository), typeof(BookRepository));
+            services.AddScoped(typeof(IUnitOfWork), typeof(UnitOfWork));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

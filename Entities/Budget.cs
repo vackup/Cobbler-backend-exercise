@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Entities
@@ -9,9 +10,11 @@ namespace Entities
         public int User { get; set; }
 
         [Required]
-        public decimal MoneyToAllocate { get; set; }
+        public decimal InitialMoneyToAllocate { get; set; }
         
         [Required]
         public DateTime CreationDate { get; set; }
+
+        public List<MoneyAllocation> MoneyAllocations { get; set; }
     }
 }

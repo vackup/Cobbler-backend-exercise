@@ -13,25 +13,28 @@ namespace Webapi.Controllers
     [ApiController]
     public class BudgetController : ControllerBase
     {
-        private readonly IBudgetBusiness business;
+        private readonly IBudgetBusiness budgetBusiness;
 
         public BudgetController(IBudgetBusiness business)
         {
-            this.business = business ?? throw new ArgumentNullException(nameof(business));
+            this.budgetBusiness = business ?? throw new ArgumentNullException(nameof(business));
         }
 
-        // GET: api/<BudgetController>
+        /// <summary>
+        /// Gets how much money is available to allocate to a user
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<IEnumerable<Budget>> Get()
+        public async Task<decimal> Get()
         {
-            return await this.business.GetAllAsync();
+            return await this.budgetBusiness.GetAvailableMoneyToAllocateByUserIdAsync(HelperData.User);
         }
 
         // GET api/<BudgetController>/5
         [HttpGet("{id}")]
         public async Task<Budget> Get(int id)
         {
-            return await this.business.GetAsync(id);
+            return await this.budgetBusiness.GetAsync(id);
         }
 
         /// <summary>
@@ -44,11 +47,11 @@ namespace Webapi.Controllers
             var budget = new Budget
             { 
                 User = HelperData.User,
-                MoneyToAllocate = 10000m,
+                InitialMoneyToAllocate = 10000m,
                 CreationDate = DateTime.Now
             };
 
-            await this.business.CreateAsync(budget);
+            await this.budgetBusiness.CreateAsync(budget);
         }
 
         // PUT api/<BudgetController>/5
@@ -62,14 +65,14 @@ namespace Webapi.Controllers
 
             author.Id = id;
 
-            await this.business.UpdateAsync(author);
+            await this.budgetBusiness.UpdateAsync(author);
         }
 
         // DELETE api/<BudgetController>/5
         [HttpDelete("{id}")]
         public async Task Delete(int id)
         {
-            await this.business.DeleteAsync(id);
+            await this.budgetBusiness.DeleteAsync(id);
         }
     }
 }

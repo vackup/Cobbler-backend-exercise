@@ -4,5 +4,35 @@
         <name>Webapi</name>
     </assembly>
     <members>
+        <member name="M:Webapi.Controllers.BudgetController.Get">
+            <summary>
+            Gets how much money is available to allocate to a user
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Webapi.Controllers.BudgetController.Post">
+            <summary>
+            Creates new budget for a user. 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Webapi.Controllers.MoneyAllocationController">
+            <summary>
+            Controller for Money Allocation actions
+            </summary>
+        </member>
+        <member name="M:Webapi.Controllers.MoneyAllocationController.GetGroupByPerson">
+            <summary>
+            View the allocations grouped by person
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Webapi.Controllers.MoneyAllocationController.Post(Webapi.Models.MoneyAllocationCreationModel)">
+            <summary>
+            Allocate money for a user to a project and / or person
+            </summary>
+            <param name="moneyAllocationCreation"></param>
+            <returns></returns>
+        </member>
     </members>
 </doc>

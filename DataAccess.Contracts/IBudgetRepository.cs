@@ -6,5 +6,6 @@ namespace DataAccess.Contracts
     public interface IBudgetRepository : IRepository<Budget, int>
     {
         Task<Budget> GetByUserIdAsync(int userId);
+        Task<Budget> GetIncludeMoneyAllocationsByUserIdAsync(int userId);
     }
 }
