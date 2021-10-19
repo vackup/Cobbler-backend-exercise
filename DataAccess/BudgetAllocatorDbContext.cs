@@ -13,7 +13,7 @@ namespace DataAccess
         {
             base.OnModelCreating(modelBuilder);
 
-            new BugetMap(modelBuilder.Entity<Budget>());
+            new BudgetMap(modelBuilder.Entity<Budget>());
             new MoneyAllocationMap(modelBuilder.Entity<MoneyAllocation>());
             new PersonMap(modelBuilder.Entity<Person>());
             new ProjectMap(modelBuilder.Entity<Project>());

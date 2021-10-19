@@ -4,6 +4,11 @@
         <name>Webapi</name>
     </assembly>
     <members>
+        <member name="T:Webapi.Controllers.BudgetController">
+            <summary>
+            Controller for Budget operations
+            </summary>
+        </member>
         <member name="M:Webapi.Controllers.BudgetController.Get">
             <summary>
             Gets how much money is available to allocate to a user
@@ -18,7 +23,7 @@
         </member>
         <member name="T:Webapi.Controllers.MoneyAllocationController">
             <summary>
-            Controller for Money Allocation actions
+            Controller for Money Allocation operations
             </summary>
         </member>
         <member name="M:Webapi.Controllers.MoneyAllocationController.GetGroupByPerson">
@@ -33,6 +38,16 @@
             </summary>
             <param name="moneyAllocationCreation"></param>
             <returns></returns>
+        </member>
+        <member name="F:Webapi.Helpers.HelperData.User">
+            <summary>
+            Simulates the logged user
+            </summary>
+        </member>
+        <member name="T:Webapi.Helpers.HelperMappings">
+            <summary>
+            Helper methods to map entities to models and models to entities
+            </summary>
         </member>
     </members>
 </doc>

@@ -1,12 +1,12 @@
-﻿using DataAccess.Contracts;
+﻿using System;
+using DataAccess.Contracts;
 using Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace DataAccess
 {
-    public class BudgetRepository : Repository<Budget, int>, IBudgetRepository
+    public class BudgetRepository : Repository<Budget, Guid>, IBudgetRepository
     {
         public BudgetRepository(BudgetAllocatorDbContext context) : base(context)
         {
@@ -14,14 +14,14 @@ namespace DataAccess
 
         public async Task<Budget> GetByUserIdAsync(int userId)
         {
-            return await this.Entities.SingleOrDefaultAsync(e => e.User == userId);
+            return await this.Entities.SingleOrDefaultAsync(e => e.UserId == userId);
         }
 
         public async Task<Budget> GetIncludeMoneyAllocationsByUserIdAsync(int userId)
         {
             return await this.Entities
                 .Include(b => b.MoneyAllocations)
-                .SingleOrDefaultAsync(e => e.User == userId);
+                .SingleOrDefaultAsync(e => e.UserId == userId);
         }
     }
 }

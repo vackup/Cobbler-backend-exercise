@@ -23,7 +23,7 @@ namespace Business
             return await this.unitOfWork.BudgetRepository.GetAllAsync();
         }
 
-        public async Task<Budget> GetAsync(int id)
+        public async Task<Budget> GetAsync(Guid id)
         {
             return await this.unitOfWork.BudgetRepository.GetAsync(id);
         }
@@ -33,18 +33,20 @@ namespace Business
             return await this.unitOfWork.BudgetRepository.GetFirstOrDefaultAsync();
         }
 
-        public async Task CreateAsync(Budget budget)
+        public async Task CreateNewBudgetAsync(Budget budget)
         {
             using (var transaction = this.unitOfWork.BeginTransaction())
             {
                 try
                 {
-                    var userBudget = await this.unitOfWork.BudgetRepository.GetByUserIdAsync(budget.User);
+                    var userBudget = await this.unitOfWork.BudgetRepository.GetByUserIdAsync(budget.UserId);
 
                     if (userBudget != null)
                     {
-                        throw new Exception($"Budget was already created for user {budget.User}");
+                        throw new Exception($"Budget was already created for user {budget.UserId}");
                     }
+
+                    budget.Id = Guid.NewGuid();
 
                     await this.unitOfWork.BudgetRepository.InsertAsync(budget);
 
@@ -65,7 +67,7 @@ namespace Business
             await this.unitOfWork.BudgetRepository.UpdateAsync(entity);
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(Guid id)
         {
             await this.unitOfWork.BudgetRepository.DeleteAsync(id);
         }
@@ -113,7 +115,6 @@ namespace Business
                 throw new ArgumentException("Money allocations needs project and / or person");
             }
 
-
             var budget = await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(moneyAllocation.UserId);
 
             var availableMoneyToAllocate = GetAvailableMoneyToAllocateByBudget(budget);
@@ -128,14 +129,22 @@ namespace Business
                 throw new Exception("There is no more money available to allocate");
             }
 
+            moneyAllocation.Id = Guid.NewGuid();
             moneyAllocation.BudgetId = budget.Id;
 
             await this.unitOfWork.MoneyAllocationRepository.InsertAsync(moneyAllocation);
         }
 
-        public async Task<Budget> GetIncludeMoneyAllocationsByUserIdAsync(int user)
+        public async Task<IEnumerable<MoneyAllocation>> GetMoneyAllocationsByUserIdAsync(int user)
         {
-            return await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(user);
+            var budget = await this.unitOfWork.BudgetRepository.GetByUserIdAsync(user);
+
+            if (budget == null)
+            {
+                return new List<MoneyAllocation>();
+            }
+
+            return await this.unitOfWork.MoneyAllocationRepository.GetIncludePersonAndProjectByBudgetIdAsync(budget.Id);
         }
     }
 }
