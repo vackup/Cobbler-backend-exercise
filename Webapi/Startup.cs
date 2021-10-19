@@ -60,7 +60,7 @@ namespace Webapi
 
         private static void AddRepositories(IServiceCollection services)
         {
-            services.AddDbContext<BudgetAllocatorDbContext>(options => options.UseInMemoryDatabase(databaseName: "BookLibrary"));
+            services.AddDbContext<BudgetAllocatorDbContext>(options => options.UseInMemoryDatabase(databaseName: "MoneyAllocator"));
 
             services.AddScoped(typeof(IUnitOfWork), typeof(UnitOfWork));
         }
@@ -82,7 +82,7 @@ namespace Webapi
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "BookLibrary API v1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "MoneyAllocator API v1");
             });
 
             app.UseAuthorization();
@@ -99,9 +99,9 @@ namespace Webapi
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "BookLibrary API",
+                    Title = "MoneyAllocator API",
                     Version = "v1",
-                    Description = "API Services for BookLibrary."
+                    Description = "API Services for MoneyAllocator."
                 });
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
