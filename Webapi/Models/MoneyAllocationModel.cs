@@ -3,7 +3,10 @@ using Entities;
 
 namespace Webapi.Models
 {
-    public class MoneyAllocationCreationModel
+    /// <summary>
+    /// Model used to create or update request for Money Allocation
+    /// </summary>
+    public class MoneyAllocationModel
     {
         public int? ProjectId { get; set; }
 

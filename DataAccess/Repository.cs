@@ -59,6 +59,7 @@ namespace DataAccess
                 {
                     throw new ArgumentNullException(nameof(entity));
                 }
+
                 context.Entry(entity).State = EntityState.Modified;
                 await this.context.SaveChangesAsync();
             }

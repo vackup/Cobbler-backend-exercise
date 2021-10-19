@@ -7,22 +7,17 @@ namespace Business.Contracts
 {
     public interface IBudgetBusiness
     {
-        Task<IEnumerable<Budget>> GetAllAsync();
-
-        Task<Budget> GetAsync(Guid id);
-
-        Task<Budget> GetFirstOrDefaultAsync();
-
         /// <summary>
         /// Creates new budget for a user. 
         /// </summary>
         Task CreateNewBudgetAsync(Budget entity);
 
-        Task UpdateAsync(Budget entity);
-
-        Task DeleteAsync(Guid id);
-
-        Task DeleteAsync(Budget entity);
+        /// <summary>
+        /// Updates allocations that I have already made.
+        /// </summary>
+        /// <param name="moneyAllocation"></param>
+        /// <returns></returns>
+        Task UpdateMoneyAllocationAsync(MoneyAllocation moneyAllocation);
 
         /// <summary>
         /// Gets Available Money To Allocate By UserId
@@ -36,7 +31,7 @@ namespace Business.Contracts
         /// </summary>
         /// <param name="moneyAllocation"></param>
         /// <returns></returns>
-        Task CreateNewMoneyAllocationAsync(MoneyAllocation moneyAllocation);
+        Task<Guid> CreateNewMoneyAllocationAsync(MoneyAllocation moneyAllocation);
 
         /// <summary>
         /// Gets all Money Allocations made By a UserId

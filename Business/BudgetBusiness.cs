@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Business.Contracts;
@@ -16,21 +15,6 @@ namespace Business
         public BudgetBusiness(IUnitOfWork unitOfWork)
         {
             this.unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-        }
-
-        public async Task<IEnumerable<Budget>> GetAllAsync()
-        {
-            return await this.unitOfWork.BudgetRepository.GetAllAsync();
-        }
-
-        public async Task<Budget> GetAsync(Guid id)
-        {
-            return await this.unitOfWork.BudgetRepository.GetAsync(id);
-        }
-
-        public async Task<Budget> GetFirstOrDefaultAsync()
-        {
-            return await this.unitOfWork.BudgetRepository.GetFirstOrDefaultAsync();
         }
 
         public async Task CreateNewBudgetAsync(Budget budget)
@@ -62,19 +46,35 @@ namespace Business
             }
         }
 
-        public async Task UpdateAsync(Budget entity)
+        public async Task UpdateMoneyAllocationAsync(MoneyAllocation moneyAllocation)
         {
-            await this.unitOfWork.BudgetRepository.UpdateAsync(entity);
-        }
+            using (var transaction = this.unitOfWork.BeginTransaction())
+            {
+                try
+                {
+                    ValidatePersonAndProject(moneyAllocation);
 
-        public async Task DeleteAsync(Guid id)
-        {
-            await this.unitOfWork.BudgetRepository.DeleteAsync(id);
-        }
+                    var budget = await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(
+                        moneyAllocation.UserId);
 
-        public async Task DeleteAsync(Budget entity)
-        {
-            await this.unitOfWork.BudgetRepository.DeleteAsync(entity);
+                    var currentMoneyAvailableToAllocate = GetCurrentMoneyAvailableToAllocate(moneyAllocation, budget);
+
+                    if (CanAllocateMoney(moneyAllocation.MoneyAllocated, currentMoneyAvailableToAllocate))
+                    {
+                        throw new Exception("Money to allocate is greater than available");
+                    }
+
+                    await this.unitOfWork.MoneyAllocationRepository.UpdateAsync(GetMoneyAllocationsToUpdate(moneyAllocation, budget));
+                    await this.unitOfWork.CompleteAsync();
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
         }
 
         public async Task<decimal> GetAvailableMoneyToAllocateByUserIdAsync(int user)
@@ -82,6 +82,99 @@ namespace Business
             var budget = await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(user);
 
             return GetAvailableMoneyToAllocateByBudget(budget);
+        }
+        
+        public async Task<Guid> CreateNewMoneyAllocationAsync(MoneyAllocation moneyAllocation)
+        {
+            using (var transaction = this.unitOfWork.BeginTransaction())
+            {
+                try
+                {
+                    ValidatePersonAndProject(moneyAllocation);
+
+                    var budget = await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(
+                        moneyAllocation.UserId);
+
+                    var availableMoneyToAllocate = GetAvailableMoneyToAllocateByBudget(budget);
+
+                    if (CanAllocateMoney(moneyAllocation.MoneyAllocated, availableMoneyToAllocate))
+                    {
+                        throw new Exception("There is no more money available to allocate");
+                    }
+
+                    moneyAllocation.BudgetId = budget.Id;
+                    moneyAllocation.Id = Guid.NewGuid();
+
+                    await this.unitOfWork.MoneyAllocationRepository.InsertAsync(moneyAllocation);
+                    await this.unitOfWork.CompleteAsync();
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+
+                return moneyAllocation.Id;
+            }
+        }
+
+        public async Task<IEnumerable<MoneyAllocation>> GetMoneyAllocationsByUserIdAsync(int user)
+        {
+            var budget = await this.unitOfWork.BudgetRepository.GetByUserIdAsync(user);
+
+            if (budget == null)
+            {
+                return new List<MoneyAllocation>();
+            }
+
+            return await this.unitOfWork.MoneyAllocationRepository.GetIncludePersonAndProjectByBudgetIdAsync(budget.Id);
+        }
+
+        private static bool CanAllocateMoney(decimal moneyToAllocate, decimal moneyAvailableToAllocate)
+        {
+            return moneyToAllocate > moneyAvailableToAllocate;
+        }
+
+        private static decimal GetCurrentMoneyAvailableToAllocate(MoneyAllocation moneyAllocation, Budget budget)
+        {
+            var availableMoneyToAllocate = GetAvailableMoneyToAllocateByBudget(budget);
+
+            var previousMoneyAllocation = GetPreviousMoneyAllocation(moneyAllocation, budget);
+
+            return availableMoneyToAllocate + previousMoneyAllocation;
+        }
+
+        private static decimal GetPreviousMoneyAllocation(MoneyAllocation moneyAllocation, Budget budget)
+        {
+            var moneyAllocationsToUpdate = budget.MoneyAllocations.FirstOrDefault(ma => ma.Id == moneyAllocation.Id);
+
+            if (moneyAllocationsToUpdate == null)
+            {
+                throw new Exception("The money allocation you are trying to update doesn't exist");
+            }
+
+            var currentMoneyAllocation = moneyAllocationsToUpdate.MoneyAllocated;
+            return currentMoneyAllocation;
+        }
+
+        private static MoneyAllocation GetMoneyAllocationsToUpdate(MoneyAllocation moneyAllocation, Budget budget)
+        {
+            var moneyAllocationsToUpdate = budget.MoneyAllocations.First(ma => ma.Id == moneyAllocation.Id);
+            moneyAllocationsToUpdate.MoneyAllocated = moneyAllocation.MoneyAllocated;
+            moneyAllocationsToUpdate.PersonId = moneyAllocation.PersonId;
+            moneyAllocationsToUpdate.ProjectId = moneyAllocation.ProjectId;
+            moneyAllocationsToUpdate.AllocationDate = moneyAllocation.AllocationDate;
+            return moneyAllocationsToUpdate;
+        }
+
+        private static void ValidatePersonAndProject(MoneyAllocation moneyAllocation)
+        {
+            if (moneyAllocation.ProjectId == null && moneyAllocation.PersonId == null)
+            {
+                throw new ArgumentException("Money allocations needs project and / or person");
+            }
         }
 
         private static decimal GetAvailableMoneyToAllocateByBudget(Budget budget)
@@ -106,45 +199,6 @@ namespace Business
             }
 
             return moneyAllocationsSum;
-        }
-
-        public async Task CreateNewMoneyAllocationAsync(MoneyAllocation moneyAllocation)
-        {
-            if (moneyAllocation.ProjectId == null && moneyAllocation.PersonId == null)
-            {
-                throw new ArgumentException("Money allocations needs project and / or person");
-            }
-
-            var budget = await this.unitOfWork.BudgetRepository.GetIncludeMoneyAllocationsByUserIdAsync(moneyAllocation.UserId);
-
-            var availableMoneyToAllocate = GetAvailableMoneyToAllocateByBudget(budget);
-
-            if (availableMoneyToAllocate <= 0m)
-            {
-                throw new Exception("There is no more money available to allocate");
-            }
-
-            if (moneyAllocation.MoneyAllocated > availableMoneyToAllocate)
-            {
-                throw new Exception("There is no more money available to allocate");
-            }
-
-            moneyAllocation.Id = Guid.NewGuid();
-            moneyAllocation.BudgetId = budget.Id;
-
-            await this.unitOfWork.MoneyAllocationRepository.InsertAsync(moneyAllocation);
-        }
-
-        public async Task<IEnumerable<MoneyAllocation>> GetMoneyAllocationsByUserIdAsync(int user)
-        {
-            var budget = await this.unitOfWork.BudgetRepository.GetByUserIdAsync(user);
-
-            if (budget == null)
-            {
-                return new List<MoneyAllocation>();
-            }
-
-            return await this.unitOfWork.MoneyAllocationRepository.GetIncludePersonAndProjectByBudgetIdAsync(budget.Id);
         }
     }
 }

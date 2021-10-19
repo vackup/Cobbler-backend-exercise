@@ -32,11 +32,25 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:Webapi.Controllers.MoneyAllocationController.Post(Webapi.Models.MoneyAllocationCreationModel)">
+        <member name="M:Webapi.Controllers.MoneyAllocationController.GetGroupByProject">
             <summary>
-            Allocate money for a user to a project and / or person
+            View the allocations grouped by project
             </summary>
-            <param name="moneyAllocationCreation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Webapi.Controllers.MoneyAllocationController.Post(Webapi.Models.MoneyAllocationModel)">
+            <summary>
+            Allocates money for a user to a project and / or person
+            </summary>
+            <param name="moneyAllocationModel"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Webapi.Controllers.MoneyAllocationController.Put(System.Guid,Webapi.Models.MoneyAllocationModel)">
+            <summary>
+            Updates allocations that I have already made.
+            </summary>
+            <param name="id"></param>
+            <param name="moneyAllocationModel"></param>
             <returns></returns>
         </member>
         <member name="F:Webapi.Helpers.HelperData.User">
@@ -47,6 +61,11 @@
         <member name="T:Webapi.Helpers.HelperMappings">
             <summary>
             Helper methods to map entities to models and models to entities
+            </summary>
+        </member>
+        <member name="T:Webapi.Models.MoneyAllocationModel">
+            <summary>
+            Model used to create or update request for Money Allocation
             </summary>
         </member>
     </members>

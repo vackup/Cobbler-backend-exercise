@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Business.Contracts;
-using Entities;
 using Webapi.Helpers;
 using Webapi.Models;
 
@@ -38,42 +37,49 @@ namespace Webapi.Controllers
         }
 
         /// <summary>
-        /// Allocate money for a user to a project and / or person
+        /// View the allocations grouped by project
         /// </summary>
-        /// <param name="moneyAllocationCreation"></param>
+        /// <returns></returns>
+        [Route("~/GroupByProject")]
+        [HttpGet]
+        public async Task<IEnumerable<MoneyAllocationsGroupByProjectModel>> GetGroupByProject()
+        {
+            var moneyAllocations = (await this.budgetBusiness.GetMoneyAllocationsByUserIdAsync(HelperData.User)).ToList();
+
+            return !moneyAllocations.ToList().Any() ? null : HelperMappings.EntityToMoneyAllocationsGroupByProjectModel(moneyAllocations);
+        }
+
+        /// <summary>
+        /// Allocates money for a user to a project and / or person
+        /// </summary>
+        /// <param name="moneyAllocationModel"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task Post([FromBody] MoneyAllocationCreationModel moneyAllocationCreation)
+        public async Task<Guid> Post([FromBody] MoneyAllocationModel moneyAllocationModel)
         {
             if (!ModelState.IsValid)
             {
                 throw new Exception();
             }
 
-            await this.budgetBusiness.CreateNewMoneyAllocationAsync(HelperMappings.MoneyAllocationCreationModelToEntity(moneyAllocationCreation, HelperData.User));
+            return await this.budgetBusiness.CreateNewMoneyAllocationAsync(HelperMappings.MoneyAllocationCreationModelToEntity(moneyAllocationModel, HelperData.User));
         }
 
-        //// PUT api/<MoneyAllocationController>/5
-        //[HttpPut("{id}")]
-        //public async Task Put(int id, [FromBody] MoneyAllocationCreationModel moneyAllocationCreationModel)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        throw new Exception();
-        //    }
+        /// <summary>
+        /// Updates allocations that I have already made.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="moneyAllocationModel"></param>
+        /// <returns></returns>
+        [HttpPut("{id}")]
+        public async Task Put(Guid id, [FromBody] MoneyAllocationModel moneyAllocationModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                throw new Exception();
+            }
 
-        //    moneyAllocationCreationModel.Id = id;
-
-        //    await this.budgetBusiness.UpdateAsync(MoneyAllocationCreationModelToEntity(moneyAllocationCreationModel));
-        //}
-
-        //// DELETE api/<MoneyAllocationController>/5
-        //[HttpDelete("{id}")]
-        //public async Task Delete(int id)
-        //{
-        //    await this.budgetBusiness.DeleteAsync(id);
-        //}
-
-        
+            await this.budgetBusiness.UpdateMoneyAllocationAsync(HelperMappings.MoneyAllocationCreationModelToEntity(moneyAllocationModel, id, HelperData.User));
+        }
     }
 }
